@@ -2,6 +2,7 @@
 // it so that it gets served as a static asset in production
 export const prerender = true;
 
+import { env } from '$env/dynamic/public';
 import type { PageLoad } from './$types';
 
 export const load = function ({ fetch, data }) {
@@ -13,5 +14,5 @@ export const load = function ({ fetch, data }) {
 			});
 		}
 	}
-	return { ...data, sendMessage };
+	return { ...data, sendMessage, sse_url: env.PUBLIC_SSE_URL || '/api/events' };
 } satisfies PageLoad;

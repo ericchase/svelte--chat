@@ -29,7 +29,7 @@
 	});
 
 	function onevent(_node: Node) {
-		const eventSource = new EventSource('/api/events');
+		const eventSource = new EventSource(data.sse_url);
 		function process(event: MessageEvent) {
 			const message = JSON.parse(event.data).replaceAll('\n', '<br>');
 			messageList = [...messageList, message];
