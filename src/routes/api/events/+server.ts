@@ -23,6 +23,6 @@ export const GET = async function GET({ request }) {
 			status: 200
 		});
 	} else {
-		return new Response("not found", { status: 404 });
+		return new Response('not found', { status: 404 });
 	}
 } satisfies RequestHandler;

@@ -14,5 +14,5 @@ export const load = function ({ fetch, data }) {
 			});
 		}
 	}
-	return { ...data, sendMessage, sse_url: env.PUBLIC_SSE_URL || '/api/events' };
+	return { ...data, sendMessage };
 } satisfies PageLoad;
