@@ -23,6 +23,6 @@ export const GET = async function GET({ request }) {
 			status: 200
 		});
 	} else {
-		throw redirect(303, '/');
+		return new Response("not found", { status: 404 });
 	}
 } satisfies RequestHandler;
