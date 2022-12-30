@@ -21,9 +21,7 @@
 		box-sizing: border-box;
 		display: flex;
 		flex-direction: column;
-		flex: 0.6;
 		margin: 0 auto;
-		max-width: 64rem;
 		padding: 1rem;
 		width: 100%;
 	}

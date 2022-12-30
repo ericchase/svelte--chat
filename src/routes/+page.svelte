@@ -8,7 +8,7 @@
 
 	import { oninput } from '@src/lib/actions/on-input';
 
-	let messageList: [string, string[]][] = [];
+	let messageList: [string, string[]][] = [['', ['(click Load to show chat history)']]];
 
 	let chatHistory: HTMLDivElement;
 	let chatShell: HTMLDivElement;
@@ -23,16 +23,6 @@
 		rows: 1
 	};
 
-	onMount(async function () {
-		openEventSource();
-		const history = await data.getHistory();
-		for (const message of history) {
-			addMessage(message);
-		}
-		resizeUserInput();
-		scrollChatHistory();
-	});
-
 	interface ServerEvents {
 		eventSource: EventSource | null;
 		eventSourceErrorCount: number;
@@ -43,6 +33,8 @@
 	} satisfies ServerEvents;
 
 	function onError() {
+		serverEvents.eventSource?.close();
+
 		if (serverEvents.eventSourceErrorCount < 3) {
 			++serverEvents.eventSourceErrorCount;
 			openEventSource();
@@ -60,20 +52,16 @@
 	}
 
 	function openEventSource() {
-		serverEvents.eventSource?.removeEventListener('error', onError);
-		serverEvents.eventSource?.removeEventListener('message', onMessage);
-		serverEvents.eventSource?.removeEventListener('open', onOpen);
-		serverEvents.eventSource?.close();
-		serverEvents.eventSource = new EventSource(`/api/events`);
-		serverEvents.eventSource?.addEventListener('error', onError);
-		serverEvents.eventSource?.addEventListener('message', onMessage);
-		serverEvents.eventSource?.addEventListener('open', onOpen);
+		serverEvents.eventSource = new window.EventSource(`/api/events`);
+		serverEvents.eventSource.onerror = onError;
+		serverEvents.eventSource.onmessage = onMessage;
+		serverEvents.eventSource.onopen = onOpen;
 	}
 
 	function onviewportresize(_node: Node) {
 		function resize() {
 			if (window.visualViewport) {
-				const height = 0.65 * window.visualViewport?.height;
+				const height = 0.7 * window.visualViewport?.height;
 				chatShell.style.setProperty('max-height', `${height}px`);
 				scrollChatHistory();
 			}
@@ -118,6 +106,19 @@
 		}
 	}
 
+	function clearHistory() {
+		messageList = [];
+	}
+
+	async function loadHistory() {
+		const history = await data.getHistory();
+		clearHistory();
+		for (const message of history) {
+			addMessage(message);
+		}
+		scrollChatHistory();
+	}
+
 	function addMessage(messages: string) {
 		const timestamp = messages.slice(0, 11);
 		const lines = messages.slice(11).split('\n');
@@ -129,6 +130,12 @@
 		resetUserInput();
 		resizeUserInput();
 	}
+
+	onMount(function () {
+		openEventSource();
+		resizeUserInput();
+		scrollChatHistory();
+	});
 </script>
 
 <svelte:head>
@@ -137,7 +144,12 @@
 </svelte:head>
 
 <div class="shell" bind:this={chatShell} use:onviewportresize>
-	<div class="title small-cap-text">Chat History</div>
+	<div class="title">
+		<div class="small-cap-text">Chat History</div>
+		<button class="send" style:margin-left="auto" on:click={loadHistory}>Load</button>
+		<button class="send" on:click={clearHistory}>Clear</button>
+	</div>
+
 	<div class="history" bind:this={chatHistory}>
 		{#each messageList as [timestamp, lines]}
 			<div class="row">
@@ -163,10 +175,41 @@
 	</div>
 </div>
 
+<div style:color="red">Use at own risk! Cross-site scripting attacks are possible!</div>
+
 <style>
 	:root {
 		--theme-color-1: lightgray;
 		--theme-color-2: gray;
+	}
+
+	.row {
+		display: flex;
+		flex-direction: row;
+	}
+	.col {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.title {
+		display: flex;
+		flex-direction: row;
+		gap: 10px;
+		justify-content: space-between;
+	}
+	.title button {
+		background-color: white;
+		border-radius: 15px;
+		border: 2px solid var(--theme-color-1);
+		color: var(--theme-color-2);
+		padding: 2px 10px;
+	}
+	.title button:hover {
+		background-color: lightgray;
+	}
+	.title button:active {
+		background-color: white;
 	}
 
 	.small-cap-text {
@@ -184,9 +227,9 @@
 		flex-direction: column;
 		flex-grow: 1 1;
 		gap: 10px;
+		max-height: 70vh;
 		min-height: 200px;
 		min-width: 300px;
-		max-height: 65vh;
 		padding: 10px;
 	}
 	.shell .history {
@@ -195,13 +238,9 @@
 		display: flex;
 		flex-direction: column;
 		flex: 1;
-		overflow-y: scroll;
-		padding: 20px;
 		gap: 12px;
-	}
-	.shell .history .row {
-		display: flex;
-		flex-direction: row;
+		overflow-y: auto;
+		padding: 20px;
 	}
 	.shell .ui {
 		display: flex;
@@ -225,5 +264,11 @@
 		border: 2px solid var(--theme-color-1);
 		color: var(--theme-color-2);
 		padding: 10px;
+	}
+	.shell .ui .send:hover {
+		background-color: lightgray;
+	}
+	.shell .ui .send:active {
+		background-color: white;
 	}
 </style>

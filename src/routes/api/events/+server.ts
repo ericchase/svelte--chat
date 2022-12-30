@@ -8,6 +8,7 @@ export const GET = async function GET({ request }) {
 		const stream = new ReadableStream({
 			start(controller) {
 				addClient(id, controller);
+				controller.enqueue('id: 0\n\n');
 			},
 			cancel() {
 				removeClient(id);
@@ -15,7 +16,6 @@ export const GET = async function GET({ request }) {
 		});
 		return new Response(stream, {
 			headers: {
-				'Cache-Control': 'no-cache',
 				'Content-Type': 'text/event-stream'
 			}
 		});
