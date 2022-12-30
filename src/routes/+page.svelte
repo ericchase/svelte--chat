@@ -8,7 +8,7 @@
 
 	import { oninput } from '@src/lib/actions/on-input';
 
-	let messageList: string[] = [...data.initHistory];
+	let messageList: [string, string[]][] = [];
 
 	let chatHistory: HTMLDivElement;
 	let chatShell: HTMLDivElement;
@@ -24,23 +24,50 @@
 	};
 
 	onMount(async function () {
+		openEventSource();
+		const history = await data.getHistory();
+		for (const message of history) {
+			addMessage(message);
+		}
 		resizeUserInput();
 		scrollChatHistory();
 	});
 
-	function onevent(_node: Node) {
-		const eventSource = new EventSource(`${window.location.href}api/events`);
-		function process(event: MessageEvent) {
-			const message = JSON.parse(event.data).replaceAll('\n', '<br>');
-			messageList = [...messageList, message];
-			scrollChatHistory();
+	interface ServerEvents {
+		eventSource: EventSource | null;
+		eventSourceErrorCount: number;
+	}
+	const serverEvents: ServerEvents = {
+		eventSource: null,
+		eventSourceErrorCount: 0
+	} satisfies ServerEvents;
+
+	function onError() {
+		if (serverEvents.eventSourceErrorCount < 3) {
+			++serverEvents.eventSourceErrorCount;
+			openEventSource();
+		} else {
+			console.log('Problem connecting to server. Please try again later.');
+			window.location.href = 'https://ericchase.github.io/web--serve/404.html';
 		}
-		eventSource.addEventListener('message', process);
-		return {
-			destroy() {
-				eventSource.removeEventListener('message', process);
-			}
-		};
+	}
+	function onMessage(event: MessageEvent) {
+		addMessage(JSON.parse(event.data));
+		scrollChatHistory();
+	}
+	function onOpen() {
+		serverEvents.eventSourceErrorCount = 0;
+	}
+
+	function openEventSource() {
+		serverEvents.eventSource?.removeEventListener('error', onError);
+		serverEvents.eventSource?.removeEventListener('message', onMessage);
+		serverEvents.eventSource?.removeEventListener('open', onOpen);
+		serverEvents.eventSource?.close();
+		serverEvents.eventSource = new EventSource(`/api/events`);
+		serverEvents.eventSource?.addEventListener('error', onError);
+		serverEvents.eventSource?.addEventListener('message', onMessage);
+		serverEvents.eventSource?.addEventListener('open', onOpen);
 	}
 
 	function onviewportresize(_node: Node) {
@@ -91,6 +118,12 @@
 		}
 	}
 
+	function addMessage(messages: string) {
+		const timestamp = messages.slice(0, 11);
+		const lines = messages.slice(11).split('\n');
+		messageList = [...messageList, [timestamp, lines]];
+	}
+
 	function sendMessage() {
 		data.sendMessage(userMessage.trim());
 		resetUserInput();
@@ -103,11 +136,18 @@
 	<meta name="description" content="Svelte demo app" />
 </svelte:head>
 
-<div class="shell" bind:this={chatShell} use:onviewportresize use:onevent>
+<div class="shell" bind:this={chatShell} use:onviewportresize>
 	<div class="title small-cap-text">Chat History</div>
 	<div class="history" bind:this={chatHistory}>
-		{#each messageList as message}
-			<div>{@html message}</div>
+		{#each messageList as [timestamp, lines]}
+			<div class="row">
+				<div><span class="timestamp">{@html timestamp}</span></div>
+				<div>
+					{#each lines as line}
+						{@html line}<br />
+					{/each}
+				</div>
+			</div>
 		{/each}
 	</div>
 	<div class="ui">
@@ -155,9 +195,13 @@
 		display: flex;
 		flex-direction: column;
 		flex: 1;
-		gap: 10px;
 		overflow-y: scroll;
 		padding: 20px;
+		gap: 12px;
+	}
+	.shell .history .row {
+		display: flex;
+		flex-direction: row;
 	}
 	.shell .ui {
 		display: flex;
@@ -169,8 +213,9 @@
 		border-radius: 15px;
 		border: 2px solid var(--theme-color-1);
 		flex: 1;
-		height: 19px;
+		font-family: var(--font-body);
 		font-size: 16px;
+		height: 19px;
 		padding: 10px;
 		resize: none;
 	}

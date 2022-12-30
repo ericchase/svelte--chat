@@ -93,6 +93,12 @@ button:focus:not(:focus-visible) {
 	overflow: hidden;
 	padding: 0;
 	position: absolute;
-	width: 1px;
 	white-space: nowrap;
+	width: 1px;
+}
+
+.timestamp {
+	opacity: 0.5;
+	margin-right: 16px;
+	font-size: 12px;
 }

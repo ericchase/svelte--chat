@@ -1,4 +1,3 @@
-import { redirect } from '@sveltejs/kit';
 import { addClient, removeClient } from '$lib/server/stores/clients.server';
 
 import type { RequestHandler } from './$types';
@@ -10,19 +9,17 @@ export const GET = async function GET({ request }) {
 			start(controller) {
 				addClient(id, controller);
 			},
-			cancel(_reason) {
+			cancel() {
 				removeClient(id);
 			}
 		});
 		return new Response(stream, {
 			headers: {
 				'Cache-Control': 'no-cache',
-				'Content-Type': 'text/event-stream',
-				Connection: 'keep-alive'
-			},
-			status: 200
+				'Content-Type': 'text/event-stream'
+			}
 		});
 	} else {
-		return new Response('not found', { status: 404 });
+		return new Response('Page not Found', { status: 404 });
 	}
 } satisfies RequestHandler;

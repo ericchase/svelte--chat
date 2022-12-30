@@ -2,10 +2,14 @@
 // it so that it gets served as a static asset in production
 export const prerender = true;
 
-import { env } from '$env/dynamic/public';
 import type { PageLoad } from './$types';
 
-export const load = function ({ fetch, data }) {
+export const load = function ({ fetch }) {
+	async function getHistory(): Promise<string[]> {
+		const response = await fetch('/api/chat/get-history');
+		const data = await response.json();
+		return Array.isArray(data) ? data : [];
+	}
 	function sendMessage(message: string) {
 		if (message.length > 0) {
 			fetch('/api/chat/send-message', {
@@ -14,5 +18,5 @@ export const load = function ({ fetch, data }) {
 			});
 		}
 	}
-	return { ...data, sendMessage };
+	return { getHistory, sendMessage };
 } satisfies PageLoad;
