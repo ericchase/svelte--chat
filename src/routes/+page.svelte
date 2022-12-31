@@ -173,8 +173,6 @@
   </div>
 </div>
 
-<div style:color="red">Use at own risk! Cross-site scripting attacks are possible!</div>
-
 <style>
   :root {
     --theme-color-1: lightgray;
