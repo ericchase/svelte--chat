@@ -151,12 +151,17 @@
   </div>
 
   <div class="history" bind:this={chatHistory}>
-    {#each messageList as [timestamp, lines]}
+    {#each messageList as [timestamp, [first_line, ...lines]]}
       <div class="row">
-        <div><span class="timestamp">{@html timestamp}</span></div>
+        <div><span class="timestamp">{timestamp}</span></div>
         <div>
+          <!-- !!WARNING!! -->
+          <!-- Using {@html first_line} and {@html line} here would make-->
+          <!-- cross-site scripting attacks possible. Learn more about these -->
+          <!-- attacks at https://owasp.org/www-community/attacks/xss/ -->
+          {first_line}
           {#each lines as line}
-            {@html line}<br />
+            <br />{line}
           {/each}
         </div>
       </div>
