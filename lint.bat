@@ -1,2 +1,1 @@
-@echo off
-pnpm lint
+@pnpm lint
