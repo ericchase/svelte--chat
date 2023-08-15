@@ -1,6 +1,6 @@
 ## Live Site
 
-[ericchase--chat.fly.dev](https://ericchase--chat.fly.dev/)
+~~[ericchase--chat.fly.dev](https://ericchase--chat.fly.dev/)~~
 
 ## Notes
 
